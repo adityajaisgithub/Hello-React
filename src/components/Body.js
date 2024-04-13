@@ -1,7 +1,9 @@
-import RestaurantCard from "./RestaurantCard";
-import { useEffect, useState } from "react";
+import RestaurantCard, { withTopResLabel } from "./RestaurantCard";
+import { useContext, useEffect, useState } from "react";
 import Shimmer from "./Shimmer";
 import useOnlineStatus from "../utils/useOnlineStatus";
+import { Link } from "react-router-dom";
+import UserContext from "../utils/UserContext";
 
 
 
@@ -9,11 +11,15 @@ const Body =()=>{
 
 const [listOfRestaurant,setListOfRestaurant] = useState([]);
 const [filteredRestaurant,setFilteredRestaurant] = useState([]);
+const [userName,setUserName] =useState();
+const [searchText, setSearchText] = useState();
 
-const [searchText, setSearchText] = useState("");
+
 
 // whenever state variable update react trigger a reconcilation cycle(re-render the component)
-console.log("Body Render",listOfRestaurant);
+// console.log("Body Render",listOfRestaurant);
+
+const TopRestaurantCard = withTopResLabel(RestaurantCard);
 
 useEffect(()=>{
    fetchData();
@@ -21,26 +27,27 @@ useEffect(()=>{
 
  
 const fetchData = async ()=>{
-  data = await fetch(
+ const data = await fetch(
     "https://www.swiggy.com/dapi/restaurants/list/v5?lat=26.8466937&lng=80.94616599999999&is-seo-homepage-enabled=true&page_type=DESKTOP_WEB_LISTING" 
        )
     
      const json = await data.json();
-     console.log(json);
-     ;
+    //  console.log(json);
+     
      setListOfRestaurant(json?.data?.cards[1]?.card?.card?.gridElements?.infoWithStyle?.restaurants);
      setFilteredRestaurant(json?.data?.cards[1]?.card?.card?.gridElements?.infoWithStyle?.restaurants);
-
+  
 }
       const onlineStatus = useOnlineStatus();
 
    if(onlineStatus === false) return <h3>Your internet connection is lost!!</h3>;
-
+   
+   const {loggedUserName,setUserInfo} = useContext(UserContext)
   return (listOfRestaurant.length === 0)? <Shimmer/> : (
   <div className="body">
     <div className="flex m-4">
       <div className="">
-        <input type="text" className="border border-gray-400  p-0.5" value = {searchText} 
+        <input type="text" data-testid ="searchInput" className="border border-gray-400  p-0.5" value = {searchText} 
         onChange={(e)=>{
                setSearchText(e.target.value)
         }} />
@@ -62,12 +69,24 @@ const fetchData = async ()=>{
               (res)=> res.info.avgRating >= 4.5
               ));
         }}
+        
       >TOP RESTAURANT</button>
+      <label className="  p-0.5 h-7 my-4 mx-2">UserName:</label>
+      <input type="text" className="border border-gray-400  p-0.5 h-7 my-4 mx-2" value = {loggedUserName} 
+        onChange={(e)=>{
+          setUserInfo(e.target.value)
+        }} />
     </div>
     <div className="flex flex-wrap w-screen">
       
     {filteredRestaurant.map((restaurant) => (
-    <RestaurantCard key ={restaurant.info.id} resData={restaurant} />
+      <Link 
+       key ={restaurant.info.id}
+       to={`/RestaurantMenu/${restaurant.info.id}`}
+       >
+      {restaurant.info.avgRating >= 4.5 ? (<TopRestaurantCard resData={restaurant} />):
+      (<RestaurantCard  resData={restaurant} />) }
+      </Link>
     ))}
      
     </div>

@@ -1,4 +1,4 @@
-import React, { lazy, Suspense } from "react";
+import React, { lazy, Suspense, useEffect, useState } from "react";
 import ReactDOM from "react-dom/client";
 import Body from "./components/Body";
 import Header from "./components/Header";
@@ -8,6 +8,13 @@ import {createBrowserRouter,Outlet,RouterProvider} from "react-router-dom";
 import Error from "./components/Error";
 import RestaurantMenu from "./components/RestaurantMenu";
 import Shimmer from "./components/Shimmer";
+import { useContext } from "react";
+import UserContext from "./utils/UserContext";
+import Cart from "./components/Cart";
+import { Provider } from "react-redux";
+import appStore from "./utils/appStore";
+
+
 
 // Chunking
 // Code Splitting
@@ -19,13 +26,26 @@ import Shimmer from "./components/Shimmer";
 const About = lazy(()=> import("./components/About"));
 
 const AppLayout = () => {
+  const [userInfo,setUserInfo] = useState();
+  const {loggedUserName} = useContext(UserContext);
 
+  useEffect(()=>{
+    // Make an API call and send username and password
+   const data =  {
+      userName:"Aditya Bhai"
+    }
+    setUserInfo(data.userName);
+    },[])
+  console.log(loggedUserName);
     return (
-          <div className="app">
-            <Header/>
-            <Outlet/>
-            
-          </div>
+      <Provider store={appStore}>
+          < UserContext.Provider value={{loggedUserName:userInfo,setUserInfo}}>
+              <div className="app">
+                <Header/>
+                <Outlet/>
+              </div>
+          </UserContext.Provider>
+      </Provider>
     )};
 
     const appRouter = createBrowserRouter([
@@ -48,6 +68,10 @@ const AppLayout = () => {
           {
             path:"/RestaurantMenu/:resId",
             element:<RestaurantMenu/>
+          },
+          {
+            path:"/Cart",
+            element:<Cart/>
           }
         ],
         errorElement:<Error/>
